@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ChatsGoing</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #0a0e1a; color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+
+    #splash-screen { position: fixed; inset: 0; background: #0a0e1a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9998; }
+    .spinner { width: 44px; height: 44px; border: 4px solid #1e293b; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-top: 25px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #auth-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background: radial-gradient(circle at top, #1e3a8a55, #0a0e1a 70%); }
+    .logo-title { font-size: 42px; font-weight: 800; text-align: center; margin-bottom: 10px; letter-spacing: 1px; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-sub { color: #64748b; margin-bottom: 35px; font-size: 14px; text-align: center; }
+    .auth-container { background: #111827; padding: 30px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1px solid #1e293b; }
+    .auth-container input { width: 100%; padding: 16px; margin-bottom: 14px; border-radius: 10px; border: 1px solid #1e293b; background: #0a0e1a; color: white; font-size: 15px; outline: none; }
+    .auth-container input:focus { border-color: #3b82f6; }
+    .btn-primary { width: 100%; padding: 15px; border: none; border-radius: 10px; background: linear-gradient(90deg, #2563eb, #7c3aed); color: white; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+    .btn-secondary { width: 100%; padding: 15px; border: 1px solid #1e293b; border-radius: 10px; background: transparent; color: #f8fafc; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .divider { text-align: center; margin: 18px 0; color: #475569; font-size: 12px; position: relative; }
+    .divider::before, .divider::after { content: ""; position: absolute; top: 50%; width: 44%; height: 1px; background: #1e293b; }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+    #message { margin-top: 15px; font-size: 13px; text-align: center; }
+    .invite-label { color: #94a3b8; font-size: 12px; margin-bottom: 6px; display: block; }
+    .invite-hint { color: #64748b; font-size: 11px; margin-top: -8px; margin-bottom: 14px; }
+
+    #app-screen { display: none; flex-direction: column; height: 100vh; background: #0a0e1a; }
+    .app-header { background: #0a0e1a; padding: 18px 20px 12px; text-align: center; border-bottom: 1px solid #1e293b33; }
+    .app-header h1 { font-size: 26px; font-weight: 800; letter-spacing: 0.5px; }
+    .app-header h1 .blue { color: #3b82f6; }
+    .page-content { flex: 1; overflow-y: auto; padding: 15px 15px 90px 15px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .search-wrap { margin-bottom: 12px; position: relative; }
+    .search-wrap input { width: 100%; padding: 13px 40px 13px 42px; border-radius: 12px; border: 1px solid #1e293b; background: #111827; color: #fff; font-size: 15px; outline: none; }
+    .search-wrap input:focus { border-color: #3b82f6; }
+    .search-wrap::before { content: "🔍"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; opacity: 0.6; }
+    .clear-search { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #334155; border: none; color: #fff; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 13px; display: none; align-items: center; justify-content: center; line-height: 1; }
+    .clear-search.show { display: flex; }
+    .search-hint { text-align: center; color: #64748b; padding: 40px 20px; font-size: 14px; line-height: 1.7; }
+    .search-hint .big { font-size: 42px; display: block; margin-bottom: 14px; opacity: 0.6; }
+
+    .profile-card { background: linear-gradient(135deg, #111827, #1a2332); border: 1px solid #1e293b; border-radius: 16px; padding: 25px 20px; text-align: center; margin-bottom: 15px; position: relative; }
+    .profile-card .arrow { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #3b82f6; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #7c3aed); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 38px; color: #fff; overflow: hidden; }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-card h3 { font-size: 22px; margin-bottom: 5px; font-weight: 700; }
+    .profile-card p { color: #64748b; font-size: 14px; }
+
+    .menu-section { background: #111827; border: 1px solid #1e293b; border-radius: 16px; margin-bottom: 15px; overflow: hidden; }
+    .menu-item { display: flex; align-items: center; padding: 15px 18px; cursor: pointer; border-bottom: 1px solid #1e293b; transition: background 0.15s; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item:active { background: #1e293b; }
+    .menu-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 15px; flex-shrink: 0; }
+    .menu-icon.blue { background: #1e40af; }
+    .menu-icon.green { background: #047857; }
+    .menu-icon.purple { background: #5b21b6; }
+    .menu-icon.pink { background: #9d174d; }
+    .menu-icon.orange { background: #c2410c; }
+    .menu-icon.red { background: #b91c1c; }
+    .menu-text { flex: 1; }
+    .menu-text h4 { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+    .menu-text p { font-size: 13px; color: #64748b; }
+    .menu-arrow { color: #3b82f6; font-size: 20px; margin-left: 10px; }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f1524; border-top: 1px solid #1e293b; display: flex; justify-content: space-around; padding: 8px 0 10px; z-index: 100; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 5px 0; color: #64748b; position: relative; }
+    .nav-item .nav-icon { font-size: 22px; }
+    .nav-item .nav-label { font-size: 11px; font-weight: 500; }
+    .nav-item.active { color: #3b82f6; }
+    .nav-item.active .nav-label { font-weight: 700; }
+    .nav-item.active::after { content: ""; position: absolute; bottom: -10px; left: 30%; right: 30%; height: 3px; background: #3b82f6; border-radius: 3px; }
+
+    .user-item { background: #111827; border: 1px solid #1e293b; padding: 12px 14px; margin-bottom: 8px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+    .user-item.search-result { border-color: #3b82f6; background: #0f1d3a; }
+    .user-item.search-result:active { background: #1e293b; }
+    .user-avatar-wrap { position: relative; flex-shrink: 0; }
+    .user-avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #7c3aed); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 20px; overflow: hidden; }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .status-dot { width: 13px; height: 13px; border-radius: 50%; position: absolute; bottom: 2px; right: 2px; border: 2px solid #111827; }
+    .status-online { background: #22c55e; } .status-offline { background: #475569; }
+    .user-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .user-row-1 { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .user-row-1 h4 { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+    .user-time { font-size: 11px; color: #64748b; flex-shrink: 0; }
+    .user-time.unread-time { color: #3b82f6; font-weight: 600; }
+    .user-row-2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .user-preview { font-size: 13px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; flex: 1; }
+    .user-preview.unread { color: #f8fafc; font-weight: 500; }
+    .unread-badge { background: #3b82f6; color: #fff; font-size: 11px; font-weight: 700; border-radius: 12px; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; padding: 0 6px; flex-shrink: 0; }
+    .start-chat-badge { background: #22c55e; color: #fff; font-size: 11px; font-weight: 700; border-radius: 12px; padding: 5px 10px; flex-shrink: 0; }
+
+    #chat-screen { display: none; flex-direction: column; height: 100dvh; background: #0a0e1a; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 500; }
+    .chat-header { background: #0f1524; padding: 12px 18px; display: flex; align-items: center; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+    .back-btn { background: transparent; color: #3b82f6; font-size: 26px; padding: 0 15px 0 0; border: none; cursor: pointer; }
+    .chat-header-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .chat-header-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #7c3aed); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 15px; overflow: hidden; flex-shrink: 0; }
+    .chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .chat-header h3 { margin: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-header .chat-status { font-size: 12px; color: #94a3b8; }
+    .chat-messages { flex: 1; padding: 20px 15px; overflow-y: auto; display: flex; flex-direction: column; }
+    .chat-input-area { display: flex; padding: 12px; background: #0f1524; border-top: 1px solid #1e293b; flex-shrink: 0; align-items: center; gap: 8px; }
+    .emoji-btn { background: transparent; border: none; font-size: 24px; cursor: pointer; padding: 6px; flex-shrink: 0; color: #3b82f6; }
+    .chat-input-area input[type="text"] { flex: 1; margin: 0; border-radius: 25px; padding: 14px 20px; background: #0a0e1a; border: 1px solid #1e293b; color: #fff; font-size: 15px; outline: none; }
+    .chat-input-area .send-btn { margin: 0; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: none; cursor: pointer; color: white; background: linear-gradient(90deg, #2563eb, #7c3aed); flex-shrink: 0; }
+    .timestamp { font-size: 10px; opacity: 0.7; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
+
+    /* Emoji picker */
+    .emoji-panel { position: fixed; bottom: 0; left: 0; right: 0; background: #0f1524; border-top: 1px solid #1e293b; z-index: 700; max-height: 45vh; display: none; flex-direction: column; padding-bottom: 12px; }
+    .emoji-panel.open { display: flex; }
+    .emoji-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
+    .emoji-header span { font-size: 13px; color: #94a3b8; font-weight: 600; }
+    .emoji-close { background: transparent; border: none; color: #ef4444; font-size: 20px; cursor: pointer; padding: 4px 10px; }
+    .emoji-grid { overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+    .emoji-grid button { background: transparent; border: none; font-size: 24px; padding: 6px; cursor: pointer; border-radius: 8px; line-height: 1; }
+    .emoji-grid button:active { background: #1e293b; }
+
+    #lock-screen { display: none; position: fixed; inset: 0; background: #0a0e1a; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+    #lock-screen h2 { color: #ef4444; margin-bottom: 10px; }
+    #lock-screen input { width: 200px; padding: 15px; border-radius: 10px; border: 2px solid #1e293b; background: #111827; color: #fff; font-size: 24px; text-align: center; letter-spacing: 5px; outline: none; margin-bottom: 20px; }
+    #lock-screen button { padding: 12px 30px; border-radius: 10px; border: none; background: #ef4444; color: white; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+    .switch { position: relative; width: 46px; height: 26px; }
+    .switch input { display: none; }
+    .slider { position: absolute; inset: 0; background: #334155; border-radius: 26px; cursor: pointer; transition: 0.3s; }
+    .slider::before { content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+    .switch input:checked + .slider { background: #3b82f6; }
+    .switch input:checked + .slider::before { transform: translateX(20px); }
+
+    .subpage { display: none; position: fixed; inset: 0; background: #0a0e1a; z-index: 600; flex-direction: column; }
+    .subpage.open { display: flex; }
+    .subpage-header { background: #0f1524; padding: 15px 18px; display: flex; align-items: center; border-bottom: 1px solid #1e293b; }
+    .subpage-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+    .subpage-body { flex: 1; overflow-y: auto; padding: 15px; }
+    .form-input { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #1e293b; background: #0a0e1a; color: #fff; font-size: 15px; outline: none; }
+    .form-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: none; background: linear-gradient(90deg, #2563eb, #7c3aed); color: #fff; cursor: pointer; font-size: 15px; font-weight: 700; }
+    .danger-btn { background: #b91c1c; }
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 8px; z-index: 10000; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); max-width: 90%; text-align: center; }
+    .edit-avatar-wrap { text-align: center; margin-bottom: 20px; }
+    .edit-avatar { width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #7c3aed); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 50px; color: #fff; overflow: hidden; cursor: pointer; border: 3px solid #1e293b; position: relative; }
+    .edit-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .edit-avatar::after { content: "📷"; position: absolute; bottom: 0; right: 0; background: #3b82f6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid #0a0e1a; }
+    .edit-hint { color: #64748b; font-size: 12px; text-align: center; }
+    .label { color: #94a3b8; font-size: 13px; margin-top: 15px; margin-bottom: 4px; display: block; }
+</style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <h1 class="logo-title">ChatsGoing</h1>
+    <div class="spinner"></div>
+</div>
+
+<div id="lock-screen">
+    <h2>🔒 App Locked</h2>
+    <input type="password" id="unlock-pin" maxlength="5" placeholder="*****">
+    <button id="btn-unlock">Unlock</button>
+    <p id="lock-message" style="color: red; margin-top: 10px;"></p>
+</div>
+
+<div id="auth-screen">
+    <h1 class="logo-title">ChatsGoing</h1>
+    <p class="logo-sub">Chat Freely, Stay Connected</p>
+    <div class="auth-container">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <input type="password" id="pin-setup" maxlength="5" placeholder="Set 5-digit PIN (Sign Up only)">
+        <label class="invite-label">Invite Code (Sign Up only)</label>
+        <input type="text" id="invite-code" placeholder="Enter your invite code" autocomplete="off">
+        <p class="invite-hint">Ask the app owner for a valid invite code</p>
+        <button class="btn-primary" id="btn-login">Log In</button>
+        <div class="divider">OR</div>
+        <button class="btn-secondary" id="btn-signup">Create a new account</button>
+        <p id="message"></p>
+    </div>
+</div>
+
+<div id="app-screen">
+    <div class="app-header"><h1>Chats<span class="blue">Going</span></h1></div>
+    <div class="page-content">
+
+        <div class="page active" id="page-chats">
+            <div class="search-wrap">
+                <input type="text" id="search-chats" placeholder="Search username to start chat..." autocomplete="off">
+                <button class="clear-search" id="clear-search">✕</button>
+            </div>
+            <div id="user-list"></div>
+        </div>
+
+        <div class="page" id="page-settings">
+            <div class="profile-card" data-subpage="edit-profile">
+                <div class="profile-avatar" id="settings-avatar">?</div>
+                <h3 id="settings-name">User</h3>
+                <p id="settings-username">@username</p>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-section">
+                <div class="menu-item" data-subpage="chat-settings">
+                    <div class="menu-icon blue">💬</div>
+                    <div class="menu-text"><h4>Chat</h4><p>Customize your chat experience</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item" data-subpage="privacy-settings">
+                    <div class="menu-icon green">🛡️</div>
+                    <div class="menu-text"><h4>Privacy &amp; Security</h4><p>Manage your privacy settings</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item" data-subpage="notification-settings">
+                    <div class="menu-icon purple">🔔</div>
+                    <div class="menu-text"><h4>Notifications</h4><p>Control your notifications</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item" data-subpage="appearance-settings">
+                    <div class="menu-icon pink">🎨</div>
+                    <div class="menu-text"><h4>Appearance</h4><p>Change app theme and style</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+            </div>
+            <div class="menu-section">
+                <div class="menu-item" id="btn-logout">
+                    <div class="menu-icon orange">🚪</div>
+                    <div class="menu-text"><h4>Logout</h4><p>Sign out from your account</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item" id="btn-delete-account">
+                    <div class="menu-icon red">🗑️</div>
+                    <div class="menu-text"><h4>Delete Account</h4><p>Permanently delete your account</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="page" id="page-profile">
+            <div class="profile-card" style="padding: 40px 20px;" data-subpage="edit-profile">
+                <div class="profile-avatar" id="profile-avatar" style="width:100px;height:100px;font-size:46px;">?</div>
+                <h3 id="profile-name" style="font-size:24px;">User</h3>
+                <p id="profile-username" style="font-size:14px;">@username</p>
+                <span class="arrow">›</span>
+            </div>
+            <div class="menu-section">
+                <div class="menu-item" data-subpage="edit-profile">
+                    <div class="menu-icon blue">✏️</div>
+                    <div class="menu-text"><h4>Edit Profile</h4><p>Change photo and name</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item" data-subpage="change-pw">
+                    <div class="menu-icon purple">🔑</div>
+                    <div class="menu-text"><h4>Change Password</h4><p>Update your password</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+                <div class="menu-item" data-subpage="change-pin">
+                    <div class="menu-icon green">🔢</div>
+                    <div class="menu-text"><h4>Change PIN</h4><p>Update your 5-digit PIN</p></div>
+                    <span class="menu-arrow">›</span>
+                </div>
+            </div>
+            <div class="menu-section">
+                <div class="menu-item">
+                    <div class="menu-icon green">ℹ️</div>
+                    <div class="menu-text"><h4>App Version</h4><p>1.0.0</p></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="bottom-nav">
+        <div class="nav-item active" data-tab="chats"><span class="nav-icon">💬</span><span class="nav-label">Chats</span></div>
+        <div class="nav-item" data-tab="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></div>
+        <div class="nav-item" data-tab="profile"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></div>
+    </div>
+</div>
+
+<div id="chat-screen">
+    <div class="chat-header">
+        <button class="back-btn" id="btn-back">←</button>
+        <div class="chat-header-info">
+            <div class="chat-header-avatar" id="chat-header-avatar">?</div>
+            <div style="min-width:0; flex:1;">
+                <h3 id="chat-with-name">Chat</h3>
+                <div class="chat-status" id="chat-status-text"></div>
+            </div>
+        </div>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-area">
+        <button class="emoji-btn" id="btn-emoji">😊</button>
+        <input type="text" id="msg-input" placeholder="Type a message...">
+        <button class="send-btn" id="btn-send">➤</button>
+    </div>
+</div>
+
+<!-- Emoji Panel -->
+<div class="emoji-panel" id="emoji-panel">
+    <div class="emoji-header">
+        <span>Emojis</span>
+        <button class="emoji-close" id="emoji-close">✕</button>
+    </div>
+    <div class="emoji-grid" id="emoji-grid"></div>
+</div>
+
+<div class="subpage" id="subpage-edit-profile">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Edit Profile</h3></div>
+    <div class="subpage-body">
+        <div class="edit-avatar-wrap">
+            <div class="edit-avatar" id="edit-avatar-preview">?</div>
+            <p class="edit-hint">Tap the photo to change</p>
+            <input type="file" id="photo-input" accept="image/*" style="display:none;">
+        </div>
+        <label class="label">Display Name</label>
+        <input class="form-input" type="text" id="edit-display-name" maxlength="30" placeholder="Enter your display name">
+        <label class="label">Username</label>
+        <input class="form-input" type="text" id="edit-username" disabled style="opacity:0.5;">
+        <button class="form-btn" id="btn-save-profile">Save Profile</button>
+        <button class="form-btn danger-btn" id="btn-remove-photo" style="margin-top:8px;">Remove Photo</button>
+    </div>
+</div>
+
+<div class="subpage" id="subpage-chat-settings">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Chat</h3></div>
+    <div class="subpage-body">
+        <div class="menu-section">
+            <div class="menu-item">
+                <div class="menu-icon blue">🔒</div>
+                <div class="menu-text"><h4>Auto-Lock</h4><p>Lock after inactivity</p></div>
+                <select class="form-input" id="setting-autolock" style="width:auto;margin:0;padding:6px 10px;">
+                    <option value="1">1 min</option>
+                    <option value="2">2 min</option>
+                    <option value="5">5 min</option>
+                    <option value="0">Never</option>
+                </select>
+            </div>
+            <div class="menu-item">
+                <div class="menu-icon green">✓✓</div>
+                <div class="menu-text"><h4>Read Receipts</h4><p>Show when you read messages</p></div>
+                <label class="switch"><input type="checkbox" id="setting-read-receipts" checked><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="subpage" id="subpage-privacy-settings">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Privacy &amp; Security</h3></div>
+    <div class="subpage-body">
+        <div class="menu-section">
+            <div class="menu-item">
+                <div class="menu-icon green">🔐</div>
+                <div class="menu-text"><h4>End-to-End Encryption</h4><p>All messages are encrypted</p></div>
+                <span class="menu-arrow">✓</span>
+            </div>
+            <div class="menu-item">
+                <div class="menu-icon blue">⏱️</div>
+                <div class="menu-text"><h4>Auto-Delete</h4><p>Messages delete after 2 min (seen) / 5 min (unseen)</p></div>
+                <span class="menu-arrow">✓</span>
+            </div>
+            <div class="menu-item" data-subpage="change-pw">
+                <div class="menu-icon blue">🔑</div>
+                <div class="menu-text"><h4>Change Password</h4><p>Update account password</p></div>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" data-subpage="change-pin">
+                <div class="menu-icon purple">🔢</div>
+                <div class="menu-text"><h4>Change PIN</h4><p>Update 5-digit security PIN</p></div>
+                <span class="menu-arrow">›</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="subpage" id="subpage-notification-settings">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Notifications</h3></div>
+    <div class="subpage-body">
+        <div class="menu-section">
+            <div class="menu-item">
+                <div class="menu-icon purple">🔔</div>
+                <div class="menu-text"><h4>Push Notifications</h4><p>Receive new message alerts</p></div>
+                <label class="switch"><input type="checkbox" id="setting-notif" checked><span class="slider"></span></label>
+            </div>
+            <div class="menu-item">
+                <div class="menu-icon blue">🔊</div>
+                <div class="menu-text"><h4>Message Sound</h4><p>Play sound on new message</p></div>
+                <label class="switch"><input type="checkbox" id="setting-sound" checked><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="subpage" id="subpage-appearance-settings">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Appearance</h3></div>
+    <div class="subpage-body">
+        <div class="menu-section">
+            <div class="menu-item">
+                <div class="menu-icon pink">🌙</div>
+                <div class="menu-text"><h4>Dark Mode</h4><p>Use dark theme</p></div>
+                <label class="switch"><input type="checkbox" id="setting-darkmode" checked><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="subpage" id="subpage-change-pw">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Change Password</h3></div>
+    <div class="subpage-body">
+        <input class="form-input" type="password" id="old-pw" placeholder="Current Password">
+        <input class="form-input" type="password" id="new-pw" placeholder="New Password">
+        <input class="form-input" type="password" id="confirm-pw" placeholder="Confirm New Password">
+        <button class="form-btn" id="btn-save-pw">Save Password</button>
+    </div>
+</div>
+
+<div class="subpage" id="subpage-change-pin">
+    <div class="subpage-header"><button class="back-btn subpage-back">←</button><h3>Change PIN</h3></div>
+    <div class="subpage-body">
+        <input class="form-input" type="password" maxlength="5" id="old-pin" placeholder="Current 5-digit PIN">
+        <input class="form-input" type="password" maxlength="5" id="new-pin" placeholder="New 5-digit PIN">
+        <input class="form-input" type="password" maxlength="5" id="confirm-pin" placeholder="Confirm New PIN">
+        <button class="form-btn" id="btn-save-pin">Save PIN</button>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, doc, setDoc, getDocs, deleteDoc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getDatabase, ref, set, onDisconnect, onValue, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDilwjJkaUOlciHqR_ZM6JupHl1H-Tesfg",
+    authDomain: "chatsgoing.firebaseapp.com",
+    projectId: "chatsgoing",
+    storageBucket: "chatsgoing.firebasestorage.app",
+    messagingSenderId: "157108807512",
+    appId: "1:157108807512:web:1ae9c2e9c339d2dd1fe72d",
+    databaseURL: "https://chatsgoing-default-rtdb.asia-southeast1.firebasedatabase.app/"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const rtdb = getDatabase(app);
+setPersistence(auth, browserLocalPersistence).catch(e => console.log("Persistence:", e));
+
+const splashScreen = document.getElementById("splash-screen");
+const authScreen = document.getElementById("auth-screen");
+const appScreen = document.getElementById("app-screen");
+const chatScreen = document.getElementById("chat-screen");
+const lockScreen = document.getElementById("lock-screen");
+const userListDiv = document.getElementById("user-list");
+const searchChatsInput = document.getElementById("search-chats");
+const clearSearchBtn = document.getElementById("clear-search");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const pinSetupInput = document.getElementById("pin-setup");
+const inviteCodeInput = document.getElementById("invite-code");
+const message = document.getElementById("message");
+const msgInput = document.getElementById("msg-input");
+const chatWithName = document.getElementById("chat-with-name");
+const chatHeaderAvatar = document.getElementById("chat-header-avatar");
+const chatMessages = document.getElementById("chat-messages");
+const chatStatusText = document.getElementById("chat-status-text");
+const unlockPinInput = document.getElementById("unlock-pin");
+const btnUnlock = document.getElementById("btn-unlock");
+const lockMessage = document.getElementById("lock-message");
+const emojiPanel = document.getElementById("emoji-panel");
+const emojiGrid = document.getElementById("emoji-grid");
+
+let currentUser = null;
+let currentUserData = null;
+let selectedUserId = null;
+let selectedUserData = null;
+let unsubscribeMessages = null;
+let isLocked = false;
+let inactivityTimer = null;
+let currentChatKey = null;
+let pendingPhotoBase64 = null;
+let authResolved = false;
+let myChats = [];
+let autoDeleteInterval = null;
+let currentChatId = null;
+
+function showToast(msg) {
+    const t = document.createElement("div");
+    t.className = "toast";
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+function fillAvatarEl(el, user, size = 50) {
+    el.style.width = size + "px"; el.style.height = size + "px";
+    if (user && user.photoURL) el.innerHTML = `<img src="${user.photoURL}" alt="">`;
+    else { const n = (user && (user.displayName || user.username)) || "?"; el.innerHTML = ""; el.innerText = n.charAt(0).toUpperCase(); }
+}
+
+// E2EE
+async function getEncryptionKey(chatId) {
+    try {
+        const enc = new TextEncoder();
+        const km = await crypto.subtle.importKey("raw", enc.encode(chatId), { name: "PBKDF2" }, false, ["deriveKey"]);
+        return await crypto.subtle.deriveKey(
+            { name: "PBKDF2", salt: enc.encode("chatsgoing_salt"), iterations: 100000, hash: "SHA-256" },
+            km, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+        );
+    } catch (e) { return null; }
+}
+async function encryptMessage(text, key) {
+    if (!key) return text;
+    try {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(text));
+        return btoa(String.fromCharCode(...iv)) + ":" + btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+    } catch { return text; }
+}
+async function decryptMessage(data, key) {
+    if (!key) return "🔒 [Encrypted]";
+    try {
+        if (!data || !data.includes(":")) return data;
+        const [ivB, encB] = data.split(":");
+        const iv = new Uint8Array(atob(ivB).split("").map(c => c.charCodeAt(0)));
+        const enc = new Uint8Array(atob(encB).split("").map(c => c.charCodeAt(0)));
+        return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, enc));
+    } catch { return "🔒 [Unable to decrypt]"; }
+}
+async function hashPin(pin) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function resizeImage(file, maxSize = 200, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+                else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+function formatChatTime(millis) {
+    if (!millis) return "";
+    const d = new Date(millis); const now = new Date();
+    if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    const diff = Math.floor((now - d) / 86400000);
+    if (diff < 7) return d.toLocaleDateString([], { weekday: 'short' });
+    return d.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+// Auto-delete logic: 5 min unseen, 2 min seen
+const UNSEEN_DELETE_MS = 5 * 60 * 1000;
+const SEEN_DELETE_MS = 2 * 60 * 1000;
+
+async function checkAndDeleteExpired(chatId) {
+    try {
+        const snap = await getDocs(collection(db, "chats", chatId, "messages"));
+        const now = Date.now();
+        const deletions = [];
+        snap.forEach(ds => {
+            const d = ds.data();
+            if (d.deletedFor && d.deletedFor.includes(currentUser.uid)) return;
+            if (d.expiresAt && typeof d.expiresAt === "number" && d.expiresAt < now) {
+                deletions.push(deleteDoc(doc(db, "chats", chatId, "messages", ds.id)));
+            }
+        });
+        if (deletions.length > 0) await Promise.all(deletions);
+    } catch (e) { console.log("Auto-delete check error:", e); }
+}
+
+function startAutoDeleteChecker() {
+    if (autoDeleteInterval) clearInterval(autoDeleteInterval);
+    autoDeleteInterval = setInterval(async () => {
+        if (!currentUser) return;
+        if (currentChatId) {
+            await checkAndDeleteExpired(currentChatId);
+        }
+    }, 10000); // every 10 sec
+}
+
+// Lock
+function lockApp() {
+    if (!currentUser) return;
+    isLocked = true;
+    lockScreen.style.display = "flex";
+    unlockPinInput.value = "";
+    lockMessage.innerText = "";
+}
+async function unlockApp() {
+    const entered = unlockPinInput.value.trim();
+    const hashed = await hashPin(entered);
+    const snap = await getDoc(doc(db, "users", currentUser.uid));
+    if (snap.exists() && snap.data().securityPin === hashed) {
+        isLocked = false; lockScreen.style.display = "none";
+        localStorage.setItem('trusted_' + currentUser.uid, 'true');
+        resetInactivityTimer();
+    } else lockMessage.innerText = "Incorrect PIN.";
+}
+function resetInactivityTimer() {
+    if (isLocked || !currentUser) return;
+    clearTimeout(inactivityTimer);
+    const mins = parseInt(localStorage.getItem("autoLockMinutes") || "1");
+    if (mins === 0) return;
+    inactivityTimer = setTimeout(lockApp, mins * 60000);
+}
+['click','mousemove','keydown','touchstart','scroll'].forEach(e => document.addEventListener(e, resetInactivityTimer));
+btnUnlock.addEventListener("click", unlockApp);
+unlockPinInput.addEventListener("keydown", e => { if (e.key === "Enter") unlockApp(); });
+
+// SIGNUP with invite code
+document.getElementById("btn-signup").addEventListener("click", async () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    const pin = pinSetupInput.value.trim();
+    const inviteCode = inviteCodeInput.value.trim();
+
+    if (username.length < 3) { message.style.color = "red"; message.innerText = "Username must be at least 3 characters."; return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) { message.style.color = "red"; message.innerText = "Only letters, numbers and _ allowed."; return; }
+    if (pin.length !== 5) { message.style.color = "red"; message.innerText = "PIN must be exactly 5 digits."; return; }
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{6,}$/.test(password)) { message.style.color = "red"; message.innerText = "Password needs 6+ chars with letters and numbers."; return; }
+    if (!inviteCode) { message.style.color = "red"; message.innerText = "Invite code is required."; return; }
+
+    // Verify invite code
+    message.style.color = "#94a3b8"; message.innerText = "Verifying invite code...";
+    try {
+        const codeRef = doc(db, "invite_codes", inviteCode);
+        const codeSnap = await getDoc(codeRef);
+        if (!codeSnap.exists()) { message.style.color = "red"; message.innerText = "Invalid invite code."; return; }
+        if (codeSnap.data().used === true) { message.style.color = "red"; message.innerText = "This invite code is already used."; return; }
+    } catch (e) {
+        message.style.color = "red"; message.innerText = "Error checking code: " + e.message; return;
+    }
+
+    const hashedPin = await hashPin(pin);
+    const dummyEmail = username.toLowerCase() + "@chatsgoing.app";
+    createUserWithEmailAndPassword(auth, dummyEmail, password).then(async cred => {
+        // Mark invite code used
+        try {
+            await updateDoc(doc(db, "invite_codes", inviteCode), {
+                used: true, usedBy: cred.user.uid, usedAt: serverTimestamp()
+            });
+        } catch (e) { console.log("Failed to mark code used:", e); }
+
+        await setDoc(doc(db, "users", cred.user.uid), {
+            username: username, usernameLower: username.toLowerCase(),
+            displayName: username, photoURL: null,
+            uid: cred.user.uid, securityPin: hashedPin,
+            inviteCode: inviteCode, createdAt: serverTimestamp()
+        });
+        message.style.color = "green"; message.innerText = "Account created!";
+        pinSetupInput.value = ""; inviteCodeInput.value = "";
+    }).catch(err => { message.style.color = "red"; message.innerText = err.code === 'auth/email-already-in-use' ? "Username already taken." : err.message; });
+});
+
+document.getElementById("btn-login").addEventListener("click", () => {
+    signInWithEmailAndPassword(auth, usernameInput.value.trim().toLowerCase() + "@chatsgoing.app", passwordInput.value)
+        .then(() => { message.style.color = "green"; message.innerText = "Logged in!"; })
+        .catch(() => { message.style.color = "red"; message.innerText = "Invalid username or password."; });
+});
+document.getElementById("btn-logout").addEventListener("click", () => {
+    if (!confirm("Logout from your account?")) return;
+    if (currentUser) set(ref(rtdb, 'status/' + currentUser.uid), { state: 'offline', last_changed: rtdbTimestamp() });
+    localStorage.removeItem('trusted_' + currentUser.uid);
+    signOut(auth);
+});
+
+// Nav
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const tab = item.dataset.tab;
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + tab).classList.add('active');
+    });
+});
+document.querySelectorAll('[data-subpage]').forEach(el => {
+    el.addEventListener('click', e => {
+        e.stopPropagation();
+        const sp = document.getElementById('subpage-' + el.dataset.subpage);
+        if (sp) {
+            if (el.dataset.subpage === 'edit-profile') openEditProfile();
+            sp.classList.add('open');
+        }
+    });
+});
+document.querySelectorAll('.subpage-back').forEach(btn => {
+    btn.addEventListener('click', e => {
+        const sp = e.target.closest('.subpage');
+        sp.classList.remove('open');
+        if (sp.id === 'subpage-change-pw' || sp.id === 'subpage-change-pin') {
+            document.getElementById('subpage-privacy-settings')?.classList.remove('open');
+        }
+    });
+});
+
+// Search
+let searchDebounce = null;
+searchChatsInput.addEventListener("input", () => {
+    const v = searchChatsInput.value.trim();
+    clearSearchBtn.classList.toggle("show", v.length > 0);
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => performSearch(v), 350);
+});
+clearSearchBtn.addEventListener("click", () => {
+    searchChatsInput.value = "";
+    clearSearchBtn.classList.remove("show");
+    renderMyChats();
+});
+searchChatsInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") { clearTimeout(searchDebounce); performSearch(searchChatsInput.value.trim()); }
+});
+
+async function performSearch(query) {
+    if (!query) { renderMyChats(); return; }
+    const q = query.toLowerCase().trim();
+    userListDiv.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Searching...</p>`;
+    try {
+        const snap = await getDocs(collection(db, "users"));
+        let found = null;
+        snap.forEach(ds => {
+            const u = ds.data();
+            if (u.uid === currentUser.uid) return;
+            const uLower = (u.usernameLower || u.username || "").toLowerCase();
+            if (uLower === q) found = u;
+        });
+        if (!found) {
+            userListDiv.innerHTML = `<p class="search-hint"><span class="big">🔍</span>No user found<br><b style="color:#f8fafc;">"${query}"</b><br><span style="font-size:12px; opacity:0.7;">Check spelling and try again</span></p>`;
+            return;
+        }
+        userListDiv.innerHTML = "";
+        const name = found.displayName || found.username || "User";
+        const avatarInner = found.photoURL ? `<img src="${found.photoURL}" alt="">` : name.charAt(0).toUpperCase();
+        const div = document.createElement("div");
+        div.className = "user-item search-result";
+        div.innerHTML = `
+            <div class="user-avatar-wrap">
+                <div class="user-avatar">${avatarInner}</div>
+                <div class="status-dot" id="sdot-${found.uid}"></div>
+            </div>
+            <div class="user-info">
+                <div class="user-row-1"><h4>${name}</h4><span class="start-chat-badge">Start Chat</span></div>
+                <div class="user-row-2"><p class="user-preview" id="sstatus-${found.uid}">Loading...</p></div>
+            </div>`;
+        div.addEventListener("click", () => openChat(found.uid, found));
+        userListDiv.appendChild(div);
+        onValue(ref(rtdb, 'status/' + found.uid), s => {
+            const st = s.val();
+            const online = st && st.state === 'online';
+            const dot = document.getElementById("sdot-" + found.uid);
+            const stx = document.getElementById("sstatus-" + found.uid);
+            if (dot) dot.className = "status-dot " + (online ? "status-online" : "status-offline");
+            if (stx) stx.innerText = online ? "Online" : "Offline";
+        });
+    } catch (e) { userListDiv.innerHTML = `<p class="search-hint" style="color:#ef4444;">Search failed: ${e.message}</p>`; }
+}
+
+async function renderMyChats() {
+    if (myChats.length === 0) {
+        userListDiv.innerHTML = `<p class="search-hint"><span class="big">💬</span>No chats yet<br><span style="font-size:12px; opacity:0.8;">Search by username above to start a new chat</span></p>`;
+        return;
+    }
+    userListDiv.innerHTML = "";
+    for (const u of myChats) {
+        const chatId = [currentUser.uid, u.uid].sort().join("_");
+        const preview = await getChatPreview(chatId);
+        const name = u.displayName || u.username || "Unknown";
+        const avatarInner = u.photoURL ? `<img src="${u.photoURL}" alt="">` : name.charAt(0).toUpperCase();
+        const div = document.createElement("div");
+        div.className = "user-item";
+        div.innerHTML = `
+            <div class="user-avatar-wrap">
+                <div class="user-avatar">${avatarInner}</div>
+                <div class="status-dot" id="cdot-${u.uid}"></div>
+            </div>
+            <div class="user-info">
+                <div class="user-row-1">
+                    <h4>${name}</h4>
+                    <span class="user-time ${preview.isUnread ? 'unread-time' : ''}">${preview.lastMsgTime}</span>
+                </div>
+                <div class="user-row-2">
+                    <p class="user-preview ${preview.isUnread ? 'unread' : ''}">${preview.lastMsgText}</p>
+                    ${preview.unreadCount > 0 ? `<span class="unread-badge">${preview.unreadCount > 99 ? '99+' : preview.unreadCount}</span>` : ''}
+                </div>
+            </div>`;
+        div.addEventListener("click", () => openChat(u.uid, u));
+        userListDiv.appendChild(div);
+        onValue(ref(rtdb, 'status/' + u.uid), s => {
+            const st = s.val();
+            const online = st && st.state === 'online';
+            const dot = document.getElementById("cdot-" + u.uid);
+            if (dot) dot.className = "status-dot " + (online ? "status-online" : "status-offline");
+        });
+    }
+}
+
+async function getChatPreview(chatId) {
+    let lastMsgText = ""; let lastMsgTime = ""; let unreadCount = 0;
+    try {
+        const msgsSnap = await getDocs(collection(db, "chats", chatId, "messages"));
+        let lastDoc = null; let lastMillis = 0;
+        const readAt = parseInt(localStorage.getItem("readAt_" + chatId) || "0");
+        msgsSnap.forEach(m => {
+            const d = m.data();
+            if (d.deletedFor && d.deletedFor.includes(currentUser.uid)) return;
+            const t = d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() : 0;
+            if (t > lastMillis) { lastMillis = t; lastDoc = d; }
+            if (d.senderId !== currentUser.uid && t > readAt) unreadCount++;
+        });
+        if (lastDoc) {
+            const isFromMe = lastDoc.senderId === currentUser.uid;
+            try {
+                const key = await getEncryptionKey(chatId);
+                const dec = await decryptMessage(lastDoc.text, key);
+                lastMsgText = (isFromMe ? "You: " : "") + dec;
+            } catch { lastMsgText = (isFromMe ? "You: " : "") + "🔒 Message"; }
+            lastMsgTime = formatChatTime(lastMillis);
+        }
+    } catch (e) { console.log("Preview error:", e); }
+    return { lastMsgText, lastMsgTime, unreadCount, isUnread: unreadCount > 0 };
+}
+
+async function loadMyChats() {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const allUsersMap = {};
+    usersSnap.forEach(ds => {
+        const u = ds.data();
+        if (u.uid !== currentUser.uid) allUsersMap[u.uid] = u;
+    });
+    myChats = [];
+    for (const uid in allUsersMap) {
+        const chatId = [currentUser.uid, uid].sort().join("_");
+        try {
+            await checkAndDeleteExpired(chatId); // clean expired
+            const msgsSnap = await getDocs(collection(db, "chats", chatId, "messages"));
+            let hasVisible = false;
+            msgsSnap.forEach(m => {
+                const d = m.data();
+                if (d.deletedFor && d.deletedFor.includes(currentUser.uid)) return;
+                hasVisible = true;
+            });
+            if (hasVisible) myChats.push(allUsersMap[uid]);
+        } catch (e) { console.log("Chat check error:", e); }
+    }
+    if (!searchChatsInput.value.trim()) renderMyChats();
+}
+
+// Edit profile
+function openEditProfile() {
+    pendingPhotoBase64 = null;
+    document.getElementById("edit-display-name").value = currentUserData?.displayName || currentUserData?.username || "";
+    document.getElementById("edit-username").value = "@" + (currentUserData?.username || "");
+    fillAvatarEl(document.getElementById("edit-avatar-preview"), currentUserData, 120);
+}
+document.getElementById("edit-avatar-preview").addEventListener("click", () => document.getElementById("photo-input").click());
+document.getElementById("photo-input").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return showToast("Please select an image");
+    try {
+        const base64 = await resizeImage(file, 200, 0.75);
+        pendingPhotoBase64 = base64;
+        document.getElementById("edit-avatar-preview").innerHTML = `<img src="${base64}" alt="">`;
+    } catch { showToast("Failed to load image"); }
+});
+document.getElementById("btn-save-profile").addEventListener("click", async () => {
+    const newName = document.getElementById("edit-display-name").value.trim();
+    if (!newName) return showToast("Display name cannot be empty");
+    if (newName.length > 30) return showToast("Name too long");
+    const updates = { displayName: newName };
+    if (pendingPhotoBase64) updates.photoURL = pendingPhotoBase64;
+    try {
+        await updateDoc(doc(db, "users", currentUser.uid), updates);
+        currentUserData.displayName = newName;
+        if (pendingPhotoBase64) currentUserData.photoURL = pendingPhotoBase64;
+        refreshProfileUI();
+        loadMyChats();
+        document.getElementById("subpage-edit-profile").classList.remove("open");
+        showToast("Profile updated ✓");
+    } catch (e) { showToast("Error: " + e.message); }
+});
+document.getElementById("btn-remove-photo").addEventListener("click", async () => {
+    if (!confirm("Remove profile photo?")) return;
+    try {
+        await updateDoc(doc(db, "users", currentUser.uid), { photoURL: null });
+        currentUserData.photoURL = null;
+        pendingPhotoBase64 = null;
+        refreshProfileUI();
+        loadMyChats();
+        openEditProfile();
+        showToast("Photo removed");
+    } catch (e) { showToast("Error: " + e.message); }
+});
+function refreshProfileUI() {
+    const name = currentUserData?.displayName || currentUserData?.username || "User";
+    const initial = name.charAt(0).toUpperCase();
+    const sAv = document.getElementById("settings-avatar");
+    const pAv = document.getElementById("profile-avatar");
+    if (currentUserData?.photoURL) {
+        sAv.innerHTML = `<img src="${currentUserData.photoURL}" alt="">`;
+        pAv.innerHTML = `<img src="${currentUserData.photoURL}" alt="">`;
+    } else { sAv.innerHTML = ""; sAv.innerText = initial; pAv.innerHTML = ""; pAv.innerText = initial; }
+    document.getElementById("settings-name").innerText = name;
+    document.getElementById("profile-name").innerText = name;
+    document.getElementById("settings-username").innerText = "@" + (currentUserData?.username || "").toLowerCase();
+    document.getElementById("profile-username").innerText = "@" + (currentUserData?.username || "").toLowerCase();
+}
+
+// Back from chat
+document.getElementById("btn-back").addEventListener("click", async () => {
+    chatScreen.style.display = "none";
+    document.querySelector('.bottom-nav').style.display = 'flex';
+    currentChatKey = null;
+    currentChatId = null;
+    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+    searchChatsInput.value = "";
+    clearSearchBtn.classList.remove("show");
+    await loadMyChats();
+});
+
+// Send message with expiry
+document.getElementById("btn-send").addEventListener("click", async () => {
+    const text = msgInput.value.trim();
+    if (!text || !selectedUserId) return;
+    const chatId = [currentUser.uid, selectedUserId].sort().join("_");
+    msgInput.value = "";
+    emojiPanel.classList.remove("open");
+    try {
+        let enc = text;
+        if (currentChatKey) enc = await encryptMessage(text, currentChatKey);
+        const now = Date.now();
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+            text: enc, senderId: currentUser.uid,
+            createdAt: serverTimestamp(),
+            createdAtClient: now,
+            expiresAt: now + UNSEEN_DELETE_MS, // 5 min if unseen
+            viewedAt: null,
+            deletedFor: []
+        });
+        localStorage.setItem("readAt_" + chatId, Date.now().toString());
+    } catch (e) { alert("Error: " + e.message); }
+});
+msgInput.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btn-send").click(); });
+
+// Emoji picker
+const EMOJIS = [
+    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","👍","👎","👌","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","👋","🤝","🙏","💪","✊","👊","🤛","🤜","👏","🙌","👐","❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","🎉","🎊","🎈","🎁","🎂","🎀","🔥","✨","⭐","🌟","💫","⚡","💥","💯","🎵","🎶","🌈","☀️","🌙","⛅","☁️","🌟","❄️","💧","🌊","🍀","🌸","🌺","🌻","🌹","🌷","🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🍎","🍌","🍇","🍓","🍒","🍑","🍍","🥝","🍕","🍔","🍟","🍰","🍦","🍫","🍿","☕","🍺","⚽","🏀","🎮"
+];
+EMOJIS.forEach(e => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = e;
+    b.addEventListener("click", () => { msgInput.value += e; msgInput.focus(); });
+    emojiGrid.appendChild(b);
+});
+document.getElementById("btn-emoji").addEventListener("click", () => {
+    emojiPanel.classList.toggle("open");
+});
+document.getElementById("emoji-close").addEventListener("click", () => {
+    emojiPanel.classList.remove("open");
+});
+
+// Open chat
+async function openChat(userId, userData) {
+    selectedUserId = userId; selectedUserData = userData;
+    const name = userData.displayName || userData.username || "Chat";
+    chatWithName.innerText = name;
+    fillAvatarEl(chatHeaderAvatar, userData, 40);
+    chatScreen.style.display = "flex";
+    document.querySelector('.bottom-nav').style.display = 'none';
+    chatMessages.innerHTML = "<p style='color:#64748b;text-align:center;margin-top:20px;'>Loading messages...</p>";
+
+    const chatId = [currentUser.uid, userId].sort().join("_");
+    currentChatId = chatId;
+    localStorage.setItem("readAt_" + chatId, Date.now().toString());
+    currentChatKey = await getEncryptionKey(chatId);
+
+    onValue(ref(rtdb, 'status/' + userId), s => {
+        const st = s.val();
+        chatStatusText.innerText = (st && st.state === 'online') ? "Online" : "Offline";
+        chatStatusText.style.color = (st && st.state === 'online') ? "#22c55e" : "#64748b";
+    });
+
+    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+    const q = query(collection(db, "chats", chatId, "messages"));
+    unsubscribeMessages = onSnapshot(q, async snap => {
+        const now = Date.now();
+        chatMessages.innerHTML = "";
+
+        // Mark unseen received messages as seen + set 2-min expiry
+        const markSeenPromises = [];
+        snap.forEach(ds => {
+            const d = ds.data();
+            if (d.senderId !== currentUser.uid && !d.viewedAt) {
+                markSeenPromises.push(
+                    updateDoc(doc(db, "chats", chatId, "messages", ds.id), {
+                        viewedAt: now,
+                        expiresAt: now + SEEN_DELETE_MS
+                    }).catch(e => console.log("mark seen error:", e))
+                );
+            }
+        });
+        if (markSeenPromises.length > 0) await Promise.all(markSeenPromises);
+
+        // Delete expired
+        const deletePromises = [];
+        snap.forEach(ds => {
+            const d = ds.data();
+            if (d.expiresAt && typeof d.expiresAt === "number" && d.expiresAt < now) {
+                deletePromises.push(deleteDoc(doc(db, "chats", chatId, "messages", ds.id)).catch(()=>{}));
+            }
+        });
+        if (deletePromises.length > 0) await Promise.all(deletePromises);
+
+        // If empty after cleanup
+        const visibleDocs = snap.docs.filter(ds => {
+            const d = ds.data();
+            if (d.deletedFor && d.deletedFor.includes(currentUser.uid)) return false;
+            if (d.expiresAt && typeof d.expiresAt === "number" && d.expiresAt < now) return false;
+            return true;
+        });
+
+        if (visibleDocs.length === 0) {
+            chatMessages.innerHTML = "<p style='color:#64748b;text-align:center;margin-top:20px;'>No messages yet. Say hi!</p>";
+            return;
+        }
+
+        const sorted = visibleDocs.slice().sort((a, b) => {
+            const ta = a.data().createdAtClient || 0; const tb = b.data().createdAtClient || 0;
+            if (ta && tb) return ta - tb;
+            const va = a.data().createdAt && a.data().createdAt.toMillis ? a.data().createdAt.toMillis() : 0;
+            const vb = b.data().createdAt && b.data().createdAt.toMillis ? b.data().createdAt.toMillis() : 0;
+            return va - vb;
+        });
+
+        for (const ds of sorted) {
+            const d = ds.data();
+            let txt; try { txt = await decryptMessage(d.text, currentChatKey); } catch { txt = "🔒 [Error]"; }
+            const time = d.createdAt && d.createdAt.toDate
+                ? new Date(d.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : "";
+            const el = document.createElement("div");
+            el.style.margin = "6px 0"; el.style.padding = "10px 14px"; el.style.borderRadius = "16px";
+            el.style.maxWidth = "78%"; el.style.wordWrap = "break-word"; el.style.fontSize = "15px";
+            if (d.senderId === currentUser.uid) {
+                el.style.background = "linear-gradient(135deg, #2563eb, #7c3aed)";
+                el.style.color = "#fff"; el.style.marginLeft = "auto";
+                el.innerHTML = `<div>${txt}</div><span class="timestamp" style="justify-content:flex-end;">${time} <span class="del-btn" style="cursor:pointer;">🗑️</span></span>`;
+                el.querySelector(".del-btn").addEventListener("click", async e => {
+                    e.stopPropagation();
+                    if (confirm("Delete for everyone?")) await deleteDoc(doc(db, "chats", chatId, "messages", ds.id));
+                    else await updateDoc(doc(db, "chats", chatId, "messages", ds.id), { deletedFor: arrayUnion(currentUser.uid) });
+                });
+            } else {
+                el.style.background = "#111827"; el.style.color = "#f8fafc";
+                el.innerHTML = `<div>${txt}</div><span class="timestamp">${time}</span>`;
+            }
+            chatMessages.appendChild(el);
+        }
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, error => {
+        chatMessages.innerHTML = `<p style='color:#ef4444;text-align:center;margin-top:20px;padding:15px;'>Failed: ${error.message || ""}</p>`;
+    });
+}
+
+// Settings
+document.getElementById("setting-autolock").value = localStorage.getItem("autoLockMinutes") || "1";
+document.getElementById("setting-autolock").addEventListener("change", e => {
+    localStorage.setItem("autoLockMinutes", e.target.value); showToast("Auto-Lock updated");
+});
+document.getElementById("btn-save-pw").addEventListener("click", async () => {
+    const o = document.getElementById("old-pw").value;
+    const n = document.getElementById("new-pw").value;
+    const c = document.getElementById("confirm-pw").value;
+    if (!o || !n || !c) return showToast("Fill all fields");
+    if (n.length < 6) return showToast("Password min 6 chars");
+    if (n !== c) return showToast("Passwords don't match");
+    try {
+        const cred = EmailAuthProvider.credential(currentUser.email, o);
+        await reauthenticateWithCredential(currentUser, cred);
+        await updatePassword(currentUser, n);
+        document.getElementById("old-pw").value = ""; document.getElementById("new-pw").value = ""; document.getElementById("confirm-pw").value = "";
+        document.getElementById("subpage-change-pw").classList.remove("open");
+        showToast("Password updated ✓");
+    } catch (e) { showToast(e.code === 'auth/wrong-password' ? "Current password wrong" : "Error: " + e.message); }
+});
+document.getElementById("btn-save-pin").addEventListener("click", async () => {
+    const o = document.getElementById("old-pin").value.trim();
+    const n = document.getElementById("new-pin").value.trim();
+    const c = document.getElementById("confirm-pin").value.trim();
+    if (!/^\d{5}$/.test(n)) return showToast("New PIN must be 5 digits");
+    if (n !== c) return showToast("New PINs don't match");
+    try {
+        const oldHash = await hashPin(o);
+        if (currentUserData.securityPin !== oldHash) return showToast("Current PIN wrong");
+        const newHash = await hashPin(n);
+        await updateDoc(doc(db, "users", currentUser.uid), { securityPin: newHash });
+        currentUserData.securityPin = newHash;
+        document.getElementById("old-pin").value = ""; document.getElementById("new-pin").value = ""; document.getElementById("confirm-pin").value = "";
+        document.getElementById("subpage-change-pin").classList.remove("open");
+        showToast("PIN updated ✓");
+    } catch (e) { showToast("Error: " + e.message); }
+});
+document.getElementById("btn-delete-account").addEventListener("click", async () => {
+    const pwd = prompt("Enter your password to confirm:");
+    if (!pwd) return;
+    if (!confirm("Delete account permanently? All data will be lost.")) return;
+    try {
+        const cred = EmailAuthProvider.credential(currentUser.email, pwd);
+        await reauthenticateWithCredential(currentUser, cred);
+        await deleteDoc(doc(db, "users", currentUser.uid));
+        await deleteUser(currentUser);
+        localStorage.clear();
+        showToast("Account deleted");
+    } catch (e) { showToast(e.code === 'auth/wrong-password' ? "Password wrong" : "Error: " + e.message); }
+});
+
+// Auth state
+onAuthStateChanged(auth, async user => {
+    if (!authResolved) { splashScreen.style.display = "none"; authResolved = true; }
+    if (user) {
+        currentUser = user;
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) currentUserData = snap.data();
+        else currentUserData = { username: "User", displayName: "User", photoURL: null };
+        refreshProfileUI();
+        authScreen.style.display = "none";
+        appScreen.style.display = "flex";
+        if (!localStorage.getItem('trusted_' + user.uid)) { lockApp(); lockMessage.innerText = "Enter your 5-digit PIN."; }
+        else resetInactivityTimer();
+        const sRef = ref(rtdb, 'status/' + user.uid);
+        set(sRef, { state: 'online', last_changed: rtdbTimestamp() });
+        onDisconnect(sRef).set({ state: 'offline', last_changed: rtdbTimestamp() });
+        loadMyChats();
+        startAutoDeleteChecker();
+    } else {
+        currentUser = null; currentUserData = null;
+        clearTimeout(inactivityTimer);
+        if (autoDeleteInterval) { clearInterval(autoDeleteInterval); autoDeleteInterval = null; }
+        currentChatKey = null; currentChatId = null;
+        authScreen.style.display = "flex";
+        appScreen.style.display = "none";
+        chatScreen.style.display = "none";
+        lockScreen.style.display = "none";
+    }
+});
+</script>
+</body>
+</html>
